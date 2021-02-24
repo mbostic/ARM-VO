@@ -34,7 +34,7 @@ void ARM_VO_Node::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
 
         clock_t start = clock();
-        VO.update(curr_frame);
+        //VO.update(curr_frame);
         if(!VO.update(curr_frame)){
             return;
         }
