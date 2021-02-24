@@ -1,5 +1,6 @@
 #include "scale.hpp"
-
+#include <iostream>
+#include <limits>
 
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
@@ -15,12 +16,21 @@ void scaleEstimator::setCamera(const float height, const float pitch)
 // -------------------------------------------------------------------------------------
 float scaleEstimator::estimate(const cv::Mat &X)
 {
+
     std::vector<int32_t> pos_idx;
+    
     pos_idx.reserve(X.cols);
 
     for (int32_t j=0; j<X.cols; j++)
-        if (X.at<float>(2,j)>0)
+        if (X.at<float>(2, j) > 0)
             pos_idx.push_back(j);
+
+    if(pos_idx.size() == 0){
+        std::cerr << "All values in third row of X matrix are negative. Skipping frame." << std::endl;
+
+        return std::numeric_limits<float>::max();
+    }
+
 
     int nCols = pos_idx.size();
     cv::Mat X_plane(4,nCols,5);
@@ -29,7 +39,11 @@ float scaleEstimator::estimate(const cv::Mat &X)
 
     // get elements closer than median
     float median;
-    smallerThanMedian(X_plane,median);
+    //smallerThanMedian(X_plane, median);
+    if(!smallerThanMedian(X_plane, median)){
+      //  std::cout << "smallerThanMedian returned false" << std::endl;
+        return std::numeric_limits<float>::max();
+    }
 
     cv::Mat x_plane(2,nCols,5);
     X_plane.row(1).copyTo(x_plane.row(0));
@@ -73,14 +87,16 @@ float scaleEstimator::estimate(const cv::Mat &X)
         scale = prev_scale;
 
     prev_scale = scale;
+
     return scale;
 }
 
 
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
-void scaleEstimator::smallerThanMedian(const cv::Mat &X, float &median)
+bool scaleEstimator::smallerThanMedian(const cv::Mat &X, float &median)
 {
+
     // set distance and index vector
     std::vector<float> dist; dist.reserve(X.cols);
     std::vector<int32_t> idx; idx.reserve(X.cols);
@@ -96,5 +112,11 @@ void scaleEstimator::smallerThanMedian(const cv::Mat &X, float &median)
 
     // get median
     int32_t num_elem_half = idx.size()/2;
-    median = dist[idx[num_elem_half]];
+    if(idx.size() > 0){
+        median = dist[idx[num_elem_half]];
+        return true;
+    } else {
+        std::cerr << "Empty idx array. Skipping frame." << std::endl;
+        return false;
+    }
 }

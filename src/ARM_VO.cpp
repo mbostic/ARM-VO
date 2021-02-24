@@ -71,8 +71,9 @@ void ARM_VO::init(const cv::Mat& firstFrame)
 
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
-void ARM_VO::update(const cv::Mat& currentFrame)
+bool ARM_VO::update(const cv::Mat& currentFrame)
 {
+
     std::vector<cv::Point2f> curr_keypoints;
     KLT.track(prev_frame, currentFrame, prev_keypoints, curr_keypoints);
 
@@ -87,11 +88,15 @@ void ARM_VO::update(const cv::Mat& currentFrame)
         H = cv::findHomography(prev_keypoints, curr_keypoints, 8, 10); //RANSAC
     }
 
+
+
     float Fcriteria, Hcriteria;
     GRIC(prev_keypoints, curr_keypoints, prev_keypoints.size(), F, H, 0.8, Fcriteria, Hcriteria);
 
+
     if (Fcriteria < Hcriteria)
     {
+
         prev_inliers.clear();
         curr_inliers.clear();
 
@@ -112,6 +117,11 @@ void ARM_VO::update(const cv::Mat& currentFrame)
 
         //Recover Scale from camera height and pitch angle
         float scale_factor = Scale.estimate(_3dPoints);
+        // Return false if scale was not calculated
+        if(scale_factor == std::numeric_limits<float>::max()){
+           // std::cout << "scale factor is max float"  << std::endl;   
+            return false;
+        }
 
         t_f = t_f + scale_factor*(R_f*t);
         R_f = R*R_f;
@@ -130,4 +140,6 @@ void ARM_VO::update(const cv::Mat& currentFrame)
     }
     else
         std::cerr << "Skipping" << std::endl;
+    
+    return true;
 }

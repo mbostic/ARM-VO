@@ -19,7 +19,7 @@ public:
     ARM_VO(const std::string& paramsFileName); //Constructor
     void loadSetting(const std::string& paramsFileName);
     void init(const cv::Mat& firstFrame); //Initializes the VO with features in the first frame. Camera pose is set to Zero
-    void update(const cv::Mat& currentFrame); //Updates Camera pose with current frame
+    bool update(const cv::Mat& currentFrame); //Updates Camera pose with current frame
 
     bool initialized = false;
     cv::Mat R_f, t_f; //Current pose of the camera

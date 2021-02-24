@@ -1,11 +1,12 @@
 #include "ARM_VO_Node.hpp"
+// #include <unistd.h>
 
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 ARM_VO_Node::ARM_VO_Node(ros::NodeHandle &nh, const std::string& paramsFileName)
 {
     image_transport::ImageTransport it(nh);
-    imageSubscriber = it.subscribe("kitti/image", 1, &ARM_VO_Node::imageCallback, this);
+    imageSubscriber = it.subscribe("raspicam_node/image", 1, &ARM_VO_Node::imageCallback, this);
 
     VO.loadSetting(paramsFileName);
 
@@ -31,13 +32,14 @@ void ARM_VO_Node::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     }
     else
     {
+
         clock_t start = clock();
-
         VO.update(curr_frame);
-
+        if(!VO.update(curr_frame)){
+            return;
+        }
         clock_t finish = clock();
         int FPS = 1000 / (1000*(finish-start)/CLOCKS_PER_SEC);
-
         float quat[4];
         getQuaternion(VO.R_f, quat);
 
@@ -49,10 +51,10 @@ void ARM_VO_Node::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         pose_msg.orientation.y = quat[1];
         pose_msg.orientation.z = quat[2];
         pose_msg.orientation.w = quat[3];
-
         posePublisher.publish(pose_msg);
 
         Results.show(curr_frame, VO.prev_inliers, VO.curr_inliers, FPS, VO.t_f);
+
     }
 }
 

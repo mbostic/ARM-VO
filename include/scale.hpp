@@ -20,7 +20,7 @@ public:
     float estimate(const cv::Mat &X);
 
 private:
-    void smallerThanMedian (const cv::Mat &X, float &median);
+    bool smallerThanMedian (const cv::Mat &X, float &median);
     float cam_height;
     float cam_pitch;
     float motion_threshold = 100.0;
